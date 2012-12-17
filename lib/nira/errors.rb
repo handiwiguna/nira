@@ -1,0 +1,1 @@
+class NotSuitableParserError < StandardError; end
