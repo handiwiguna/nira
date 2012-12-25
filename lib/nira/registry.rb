@@ -11,7 +11,7 @@ module Nira
     end
 
     def for(target)
-      parser = @registered_parsers.find{|p| p.can_parse?(target)} and parser.new
+      @registered_parsers.find{|p| p.can_parse?(target)}
     end
   end
 end

@@ -4,7 +4,7 @@ module Nira
 
     def initialize(url, options={})
       @url = url
-      @parser = options.delete(:parser) || Parser::Generic.new
+      @parser = (options.delete(:parser) || Parser::Generic).new(options)
     end
 
     def document
@@ -13,7 +13,7 @@ module Nira
 
     def create
       return unless parser_result
-      Page.new(parser_result.title, parser_result.description)
+      Page.new(parser_result.title, parser_result.description, parser_result.images)
     end
 
     def parser_result

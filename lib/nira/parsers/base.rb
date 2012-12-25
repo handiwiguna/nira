@@ -1,16 +1,14 @@
 module Nira
   module Parser
-    module Base
-      attr_reader :document
+    class Base
+      attr_reader :document, :source, :options
 
-      def self.included(base)
-        base.extend ClassMethods
+      def initialize(options={})
+        @options = options
       end
 
-      module ClassMethods
-        def can_parse?(url)
-          false
-        end
+      def self.can_parse?(url)
+        false
       end
 
       def can_parse?(url)
@@ -22,14 +20,50 @@ module Nira
       end
 
       def description
-        document and attr = document.at("//meta[@name='description']/@content") and attr.text
+        document and get_text("//meta[@name='description']/@content")
+      end
+
+      def images
+        document and @images ||= get_collection("//img") do |attr|
+          single_image(attr)
+        end
       end
 
       def parse(document)
         raise NotSuitableParserError,
           "#{self.class.to_s} can't parse #{document.url}" unless can_parse?(document.url)
+        @source = document.url
         @document = document.value
         self
+      end
+
+      protected
+
+      def get_text(pattern)
+        attribute = document.at(*pattern) and attribute.inner_text
+      end
+
+      def get_collection(pattern)
+        collection = []
+        images = document.xpath(*pattern)
+        images.each do |attr|
+          result = yield attr
+          collection << result if result
+        end
+        collection
+      end
+
+      private
+
+      def single_image(attr)
+        src, width, height = attr["src"], attr["width"], attr["height"]
+        return if src.nil? || src.empty? || src == "/"
+        image = Nira::Image.new(url: Utils.absolutify_url(self.source, src),
+                                width: width.to_i,
+                                height: height.to_i)
+        ImageChecker.new(image, options).result
+      rescue URI::BadURIError, URI::InvalidURIError
+        nil
       end
     end
   end

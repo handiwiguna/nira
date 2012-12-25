@@ -1,9 +1,6 @@
-require "nira/parsers/opengraph"
-
 module Nira
   module Parser
-    class Generic
-      include Base
+    class Generic < Base
       include Opengraph
 
       def self.can_parse?(url)
@@ -16,6 +13,10 @@ module Nira
 
       def description
         og_description || super
+      end
+
+      def images
+        (og_images unless og_images.empty?) || super
       end
     end
   end
