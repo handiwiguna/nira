@@ -2,8 +2,7 @@ require 'spec_helper'
 
 describe Nira::Parser::Base do
 
-  class ExampleParser
-    include Nira::Parser::Base
+  class ExampleParser < Nira::Parser::Base
   end
 
   before :each do
@@ -11,9 +10,9 @@ describe Nira::Parser::Base do
   end
 
   it "should be nil" do
-    @parser.document.should be_nil
-    @parser.title.should be_nil
-    @parser.description.should be_nil
+    @parser.document.should == nil
+    @parser.title.should == nil
+    @parser.description.should == nil
   end
 
   it "return NotSuitableParserError" do
@@ -31,18 +30,51 @@ describe Nira::Parser::Base do
             <title>Book1</title>
             <meta name="description" content="about ruby programming"/>
           </head>
+          <body>
+            <img src="http://www.example.com/image1.jpg">
+            <img src="image 2.jpg">
+            <img src="http://www.example.com/image3.jpg" width="100" height="200">
+            <img src="image4.jpg" width="50">
+            <img src="image5.jpg" width="50" height="50">
+            <img src="image6.jpg" height="120">
+            <img src="image7.jpg" width="80" height="120">
+            <img src=""/>
+            <img src="/"/>
+            <img/>
+          </body>
         </html>
       HTML
-      document = stub(url: "http://www.example.com", value: Nokogiri::HTML(html))
-      @result = @parser.parse(document)
+      @document = stub(url: "http://www.example.com", value: Nokogiri::HTML(html))
+      @result = @parser.parse(@document)
     end
 
     it "return title: Book1" do
-      @result.title.should eql("Book1")
+      @result.title.should == "Book1"
     end
 
     it "return description: Description" do
-      @result.description.should eql("about ruby programming")
+      @result.description.should == "about ruby programming"
+    end
+
+    it "return all images" do
+      @result.images.should =~ ["http://www.example.com/image1.jpg",
+                                "http://www.example.com/image%202.jpg",
+                                "http://www.example.com/image3.jpg",
+                                "http://www.example.com/image4.jpg",
+                                "http://www.example.com/image5.jpg",
+                                "http://www.example.com/image6.jpg",
+                                "http://www.example.com/image7.jpg"]
+      @result.images.count.should == 7
+    end
+
+    it "return images with minimal size requirement" do
+      parser = ExampleParser.new(:min_size => "100x100")
+      parser.stub(can_parse?: true)
+      result = parser.parse(@document)
+      result.images.should =~ ["http://www.example.com/image1.jpg",
+                                "http://www.example.com/image%202.jpg",
+                                "http://www.example.com/image3.jpg"]
+      result.images.count.should == 3
     end
   end
 

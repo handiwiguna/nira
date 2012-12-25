@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "Registry" do
+describe Nira::ParserRegistry do
 
   class EbayParser
     def self.can_parse?(url)
@@ -15,15 +15,15 @@ describe "Registry" do
     end
 
     it "return 1 registered parser" do
-      @registry.registered_parsers.count.should eql(1)
+      @registry.registered_parsers.count.should == 1
     end
 
     it "return the parser for supported url" do
-      @registry.for("http://www.ebay.com").class.should eql(EbayParser)
+      @registry.for("http://www.ebay.com").should == EbayParser
     end
 
     it "return nil for unsupported url" do
-      @registry.for("http://www.etsy.com").should be_nil
+      @registry.for("http://www.etsy.com").should == nil
     end
   end
 
