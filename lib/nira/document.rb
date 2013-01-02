@@ -18,7 +18,7 @@ module Nira
 
     def fetch_html(url)
       Nokogiri::HTML(open url)
-    rescue URI::BadURIError, URI::InvalidURIError
+    rescue URI::BadURIError, URI::InvalidURIError, SocketError
       raise
     rescue
       raise FetchDocumentError
