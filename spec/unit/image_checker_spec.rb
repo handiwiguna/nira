@@ -3,83 +3,107 @@ require 'ostruct'
 
 describe Nira::ImageChecker do
 
-  it "check default value" do
-    checker = Nira::ImageChecker.new(nil)
-    checker.eager_check.should == false
-    checker.min_size.should == nil
-    checker.min_width.should == nil
-    checker.min_height.should == nil
+  let(:checker) { Nira::ImageChecker.new(image, checker_options) }
+  let(:checker_options) { {} }
+  let(:image) { nil }
+  let(:image_options) { {} }
+
+  describe "check value" do
+    it { checker.eager_check.should == false }
+    it { checker.min_size.should == nil }
+    it { checker.min_width.should == nil }
+    it { checker.min_height.should == nil }
+
+    context "with minimal size defined (100x200)" do
+      let(:checker_options) { {min_size: "100x200"} }
+      it { checker.min_width.should == 100 }
+      it { checker.min_height.should == 200 }
+    end
   end
 
-  it "minimal width and height only available when min_size defined" do
-    checker = Nira::ImageChecker.new(nil, min_size: "100x200")
-    checker.min_size.should == "100x200"
-    checker.min_width.should == 100
-    checker.min_height.should == 200
-  end
+  describe "#image_exists?" do
+    subject { checker.image_exists? }
 
-  it ".check_image_existence" do
-    image = Nira::Image.new(url: 'http://www.example.com/image.jpg')
-    image.stub(meta: OpenStruct.new(size: nil))
-    checker = Nira::ImageChecker.new(image)
-    checker.check_image_existence.should == false
-
-    image.stub(meta: OpenStruct.new(size: [20,20]))
-    checker = Nira::ImageChecker.new(image)
-    checker.check_image_existence.should == true
-  end
-
-  it ".check_min_size" do
-    image = Nira::Image.new(url: 'http://www.example.com/image.jpg')
-    checker = Nira::ImageChecker.new(image, min_size: "100x100")
-    checker.check_min_size(20, 20).should == false
-    checker.check_min_size(20, 200).should == false
-    checker.check_min_size(200, 20).should == false
-    checker.check_min_size(200, 200).should == true
-  end
-
-  it "checking image size tag" do
-    large_image = Nira::Image.new(url: 'http://www.example.com/image.jpg', width: 100, height: 100)
-    checker = Nira::ImageChecker.new(large_image, min_size: "100x100")
-    checker.result.should == large_image.url
-
-    small_image = Nira::Image.new(url: 'http://www.example.com/image.jpg', width: 10, height: 20)
-    checker = Nira::ImageChecker.new(small_image, min_size: "100x100")
-    checker.result.should == nil
-  end
-
-  context "eager checking" do
-    before :each do
-      @options = {eager_check: true}
+    context "when image not exists" do
+      let(:image) { stub(meta: OpenStruct.new(size: nil)) }
+      it { should == false }
     end
 
-    it "image not exist" do
-      image = Nira::Image.new(url: 'http://www.example.com/image.jpg')
-      checker = Nira::ImageChecker.new(image, @options)
-      checker.stub(check_image_existence: false)
-      checker.result.should == nil
+    context "when image exists" do
+      let(:image) { stub(meta: OpenStruct.new(size: [20, 20])) }
+      it { should == true }
+    end
+  end
+
+  describe "#greater_than_minimal_size?" do
+    let(:checker_options) { {min_size: "100x100"} }
+    it { checker.greater_than_minimal_size?(20, 20).should == false }
+    it { checker.greater_than_minimal_size?(20, 200).should == false }
+    it { checker.greater_than_minimal_size?(200, 20).should == false }
+    it { checker.greater_than_minimal_size?(200, 200).should == true }
+  end
+
+  describe "#result" do
+    subject { checker.result }
+    let(:image) { Nira::Image.new(image_options.merge(url: "http://www.example.com/image.jpg")) }
+
+    context "when both width & height tag defined" do
+      let(:image_options) { {width: 100, height: 100} }
+
+      it "return the url (size >= min_size)" do
+        checker_options.merge!(min_size: "100x100")
+        should == image.url
+      end
+
+      it "return nil (size < min_size)" do
+        checker_options.merge!(min_size: "200x100")
+        should == nil
+      end
     end
 
-    it "image smaller than requirement" do
-      image = Nira::Image.new(url: 'http://www.example.com/image.jpg')
-      image.stub(meta: OpenStruct.new(size: [20,20]))
-      checker = Nira::ImageChecker.new(image, @options.merge(min_size: "100x100"))
-      checker.result.should == nil
+    context "when only width tag defined" do
+      let(:image_options) { {width: 100} }
+
+      it "return nil (width:100, min_size: 50x50)" do
+        checker_options.merge!(min_size: "50x50")
+        should == nil
+      end
     end
 
-    it "image smaller than requirment but not checked/required" do
-      image = Nira::Image.new(url: 'http://www.example.com/image.jpg')
-      image.stub(meta: OpenStruct.new(size: [20,20]))
-      checker = Nira::ImageChecker.new(image, @options)
-      checker.result.should == image.url
+    context "when only height tag defined" do
+      let(:image_options) { {height: 100} }
+
+      it "return nil (height:100, min_size: 50x50)" do
+        checker_options.merge!(min_size: "50x50")
+        should == nil
+      end
     end
 
-    it "should passed the requirement" do
-      large_image = Nira::Image.new(url: 'http://www.example.com/image.jpg',
-                                    width: 100, height: 100)
-      large_image.stub(meta: OpenStruct.new(size: [100,100]))
-      checker = Nira::ImageChecker.new(large_image, @options.merge(min_size: "100x100"))
-      checker.result.should == large_image.url
+    context "when eager checking" do
+      let(:checker_options) { {eager_check: true} }
+
+      it "return nil (image size not defined)" do
+        image.stub(meta: OpenStruct.new(size: nil))
+        checker_options.merge!(min_size: "100x100")
+        should == nil
+      end
+
+      it "return nil (image smaller than size requirement)" do
+        image.stub(meta: OpenStruct.new(size: [20, 20]))
+        checker_options.merge!(min_size: "100x100")
+        should == nil
+      end
+
+      it "return the url (no size requirement)" do
+        image.stub(meta: OpenStruct.new(size: [20, 20]))
+        should == image.url
+      end
+
+      it "return the url (size >= min_size)" do
+        image.stub(meta: OpenStruct.new(size: [100, 100]))
+        checker_options.merge!(min_size: "100x100")
+        should == image.url
+      end
     end
   end
 end

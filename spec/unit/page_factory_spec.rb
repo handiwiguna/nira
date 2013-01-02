@@ -1,62 +1,35 @@
 require 'spec_helper'
 require 'ostruct'
 
+class AmazonParser < Nira::Parser::Base
+end
+
 describe Nira::PageFactory do
+  let(:factory) { Nira::PageFactory.new("http://www.example.com") }
 
-  context "with DefaultParser" do
-    before :each do
-      @factory = Nira::PageFactory.new('http://www.example.com')
-    end
-
-    it "return http://www.example.com" do
-      @factory.url.should == ("http://www.example.com")
-    end
-
-    it "return Nira::Parser::Default instance" do
-      @factory.parser.class.should == Nira::Parser::Generic
-    end
+  it { factory.url.should == ("http://www.example.com") }
+  it { factory.parser.class.should == Nira::Parser::Generic }
+  it "return nil when parse an nil document" do
+    factory.stub(parser_result: nil)
+    factory.create.should == nil
   end
 
-  context "with AmazonParser" do
-    class AmazonParser < Nira::Parser::Base; end
-
+  describe "#create" do
+    subject { factory.create }
     before :each do
-      @factory = Nira::PageFactory.new('http://www.amazon.com', parser: AmazonParser)
+      factory.stub(parser_result: OpenStruct.new(title: "Book1",
+                                                 description: "Ruby Programming",
+                                                 images: ["http://www.example.com/image1.jpg"]))
     end
+    its(:class)       { should == Nira::Page }
+    its(:title)       { should == "Book1" }
+    its(:description) { should == "Ruby Programming" }
+    its(:images)      { should =~ ["http://www.example.com/image1.jpg"] }
+  end
 
-    it "return AmazonParser instance" do
-      @factory.parser.class.should == AmazonParser
-    end
-
-    it "return nil when parse an nil document" do
-      @factory.stub(parser_result: nil)
-      @factory.create.should == nil
-    end
-
-    context "when parse a document" do
-      before :each do
-        @factory.stub(parser_result: OpenStruct.new(title: "Book1", 
-                                                    description: "RubyProgramming",
-                                                    images: ["http://www.example.com/image1.jpg"]))
-        @page = @factory.create
-      end
-
-      it "return page instance" do
-        @page.class.should == Nira::Page
-      end
-
-      it "return title: 'Book1'" do
-        @page.title.should == "Book1"
-      end
-
-      it "return description: 'RubyProgramming'" do
-        @page.description.should == "RubyProgramming"
-      end
-
-      it "return images" do
-        @page.images.should =~ ["http://www.example.com/image1.jpg"]
-      end
-    end
+  describe "custom parser" do
+    let(:factory) { Nira::PageFactory.new("http://www.example.com", parser: AmazonParser) }
+    it { factory.parser.class.should == AmazonParser }
   end
 
 end

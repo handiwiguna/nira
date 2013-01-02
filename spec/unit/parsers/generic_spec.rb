@@ -1,10 +1,17 @@
 require 'spec_helper'
 
 describe Nira::Parser::Generic do
+  subject { parser.parse(document) }
 
-  before :each do
-    @parser = Nira::Parser::Generic.new
-    html = <<-HTML
+  let(:parser) { Nira::Parser::Generic.new }
+  let(:document) { stub(url: "http://www.example.com", value: Nokogiri::HTML(html)) }
+
+  it "receive all url" do
+    parser.can_parse?('http://anything.com').should == true
+  end
+
+  context "prioritize opengraph" do
+    let(:html) { <<-HTML
       <html>
         <head>
           <title>Book1</title>
@@ -17,30 +24,15 @@ describe Nira::Parser::Generic do
           <img src="http://www.example.com/image2.jpg"/>
         </body>
       </html>
-    HTML
-    document = stub(url: "http://www.example.com", value: Nokogiri::HTML(html))
-    @result = @parser.parse(document)
+      HTML
+    }
+    its(:title)       { should == "og-title" }
+    its(:description) { should == "og-description" }
+    its(:images)      { should =~ ["http://www.example.com/image1.jpg"] }
   end
 
-  it "receive anything url" do
-    @parser.can_parse?('url').should be_true
-  end
-
-  it "prioritize og_title" do
-    @result.title.should == "og-title"
-  end
-
-  it "prioritize og_description" do
-    @result.description.should == "og-description"
-  end
-
-  it "prioritize og_image" do
-    @result.images.should =~ ["http://www.example.com/image1.jpg"]
-    @result.images.count.should == 1
-  end
-
-  it "only image tag exists" do
-    image_tag = <<-HTML
+  context "with og:image empty" do
+    let(:html) { <<-HTML
       <html>
         <head>
           <title>Book1</title>
@@ -50,10 +42,8 @@ describe Nira::Parser::Generic do
           <img src="http://www.example.com/image1.jpg"/>
         </body>
       </html>
-    HTML
-    document = stub(url: "http://www.example.com", value: Nokogiri::HTML(image_tag))
-    result = @parser.parse(document)
-    result.images.should =~ ["http://www.example.com/image1.jpg"]
-    result.images.count.should == 1
+      HTML
+    }
+    its(:images) { should =~ ["http://www.example.com/image1.jpg"] }
   end
 end
