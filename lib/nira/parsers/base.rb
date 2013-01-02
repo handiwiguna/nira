@@ -30,8 +30,7 @@ module Nira
       end
 
       def parse(document)
-        raise NotSuitableParserError,
-          "#{self.class.to_s} can't parse #{document.url}" unless can_parse?(document.url)
+        raise NotSuitableParserError unless can_parse?(document.url)
         @source = document.url
         @document = document.value
         self
