@@ -4,10 +4,10 @@ module Nira
   class Image
     attr_accessor :url, :width, :height
 
-    def initialize(attributes={})
+    def initialize(attributes)
       self.url = attributes[:url]
-      self.width = attributes[:width] || 0
-      self.height = attributes[:height] || 0
+      self.width = attributes.fetch(:width, 0)
+      self.height = attributes.fetch(:height, 0)
     end
 
     def have_size_tag?

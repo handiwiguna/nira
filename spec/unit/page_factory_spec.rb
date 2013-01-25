@@ -16,10 +16,21 @@ describe Nira::PageFactory do
 
   describe "#create" do
     subject { factory.create }
+
+    let(:url) { "http://www.example.com" }
+    let(:document) { stub(url: url, value: Nokogiri::HTML(html)) }
+    let(:html) { <<-HTML
+      <html>
+        <head>
+          <title>Book1</title>
+          <meta name="description" content="Ruby Programming"/>
+          <meta property="og:image" content="http://www.example.com/image1.jpg"/>
+        </head>
+      </html>
+      HTML
+    }
     before :each do
-      factory.stub(parser_result: OpenStruct.new(title: "Book1",
-                                                 description: "Ruby Programming",
-                                                 images: ["http://www.example.com/image1.jpg"]))
+      Nira::Document.should_receive(:fetch).with(url).and_return(document)
     end
     its(:class)       { should == Nira::Page }
     its(:title)       { should == "Book1" }
@@ -28,8 +39,9 @@ describe Nira::PageFactory do
   end
 
   describe "custom parser" do
-    let(:factory) { Nira::PageFactory.new("http://www.example.com", parser: AmazonParser) }
+    let(:factory) { Nira::PageFactory.new("http://www.example.com", parser: AmazonParser, :min_size => "50x50") }
     it { factory.parser.class.should == AmazonParser }
+    it { factory.parser.options.count.should == 1}
   end
 
 end

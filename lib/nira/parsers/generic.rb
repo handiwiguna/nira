@@ -4,7 +4,7 @@ module Nira
       include Opengraph
 
       def self.can_parse?(url)
-        true
+        !!url
       end
 
       def title

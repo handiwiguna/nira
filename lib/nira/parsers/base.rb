@@ -7,10 +7,6 @@ module Nira
         @options = options
       end
 
-      def self.can_parse?(url)
-        false
-      end
-
       def can_parse?(url)
         self.class.can_parse?(url)
       end
@@ -30,8 +26,9 @@ module Nira
       end
 
       def parse(document)
-        raise NotSuitableParserError unless can_parse?(document.url)
-        @source = document.url
+        url = document.url
+        raise NotSuitableParserError unless can_parse?(url)
+        @source = url
         @document = document.value
         self
       end

@@ -5,9 +5,13 @@ module Nira
   class Document
     attr_reader :value, :url
 
-    def initialize(url)
-      @url = Utils.normalize_url(url)
-      @value = fetch_html(@url)
+    def initialize(doc_url)
+      @url = Utils.normalize_url(doc_url)
+      @value = fetch_html
+    rescue URI::BadURIError, URI::InvalidURIError, SocketError
+      raise
+    rescue
+      raise FetchDocumentError
     end
 
     def self.fetch(url)
@@ -16,12 +20,8 @@ module Nira
 
     private
 
-    def fetch_html(url)
+    def fetch_html
       Nokogiri::HTML(open url)
-    rescue URI::BadURIError, URI::InvalidURIError, SocketError
-      raise
-    rescue
-      raise FetchDocumentError
     end
   end
 end

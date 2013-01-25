@@ -17,7 +17,7 @@ describe Nira::Utils do
     it { Nira::Utils.absolutify_url(base, "image.jpg").should == "http://www.example.com/image.jpg" }
     it { Nira::Utils.absolutify_url(base, "/image 2.jpg").should == "http://www.example.com/image%202.jpg" }
     it { Nira::Utils.absolutify_url(base, "assets/image 2.jpg").should == "http://www.example.com/assets/image%202.jpg" }
-    it { Nira::Utils.absolutify_url(base, "http://www.example.com/image 2.jpg").should == "http://www.example.com/image%202.jpg" }
+    it { Nira::Utils.absolutify_url(base, "http://www.example2.com/image 2.jpg").should == "http://www.example2.com/image%202.jpg" }
     it { Nira::Utils.absolutify_url(base2, "/assets/image.jpg").should == "http://www.example.com/assets/image.jpg" }
     it { Nira::Utils.absolutify_url(base2, "assets/image.jpg").should == "http://www.example.com/p/assets/image.jpg" }
   end

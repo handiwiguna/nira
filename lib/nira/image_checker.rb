@@ -5,7 +5,7 @@ module Nira
 
     def initialize(image, options={})
       @image = image
-      @eager_check = options[:eager_check] || false
+      @eager_check = options.fetch(:eager_check, false)
       if @min_size = options[:min_size]
         @min_width, @min_height = @min_size.split("x").map(&:to_i)
       end
@@ -13,11 +13,11 @@ module Nira
 
     def result
       passed = true
-      passed &&= greater_than_minimal_size?(image.width, image.height) if image.have_size_tag? && min_size
+      passed = passed && greater_than_minimal_size?(image.width, image.height) if image.have_size_tag? && min_size
 
       if eager_check
-        passed &&= image_exists?
-        passed &&= greater_than_minimal_size?(*(image.meta.size || [0, 0])) if min_size
+        passed = passed && image_exists?
+        passed = passed && greater_than_minimal_size?(*(image.meta.size || [0, 0])) if min_size
       end
 
       passed ? image.url : nil

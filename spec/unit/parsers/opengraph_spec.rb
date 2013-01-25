@@ -26,7 +26,7 @@ describe Nira::Parser::Opengraph, "#parse" do
           <meta property="og:image" />
           <meta property="og:image" content="image 2.jpg"/>
         </head>
-        <meta property="og:image" content="http://www.example.com/image1.jpg"/>
+        <meta name="og:image" content="http://www.example.com/image1.jpg"/>
       </html>
     HTML
   }
